@@ -3,6 +3,9 @@ import { ApiError } from "../utils/apiError.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/apiResponse.js";
+import jwt from 'jsonwebtoken'
+import mongoose from "mongoose";
+
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -16,7 +19,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
         return { accessToken, refreshToken }
 
     } catch (error) {
-        throw new ApiError(500, "Something went wrong while generating refresh and access tokens")
+          throw new ApiError(500, "Something went wrong while generating refresh and access tokens")
     }
 }
 
@@ -96,7 +99,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
 
-    const loggedInUser = User.findById(user._id).select("-password -refreshToken")
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
     const options = {
         httpOnly: true,
@@ -107,7 +110,7 @@ const loginUser = asyncHandler(async (req, res) => {
         .cookie("accessToken", accessToken, options)
         .cookie("refreshToken", refreshToken, options)
         .json(
-            newApiResponse(200, {
+            new ApiResponse(200, {
                 user: loggedInUser, accessToken, refreshToken
             }, "User logged in successfully")
         )
@@ -133,7 +136,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     return res.status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
-        .json(newApiResponse(200, {}, "User loggedOut successfully"))
+        .json(new ApiResponse(200, {}, "User loggedOut successfully"))
 })
 
 
